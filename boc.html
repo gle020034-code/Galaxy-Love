@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Particle Text</title>
+
+<style>
+body {
+  margin: 0;
+  background: radial-gradient(circle, #0a0614, #000);
+  overflow: hidden;
+  font-family: Arial;
+}
+
+canvas {
+  display: block;
+}
+
+input {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  border-radius: 30px;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  background: rgba(168,85,247,0.15);
+  color: white;
+  box-shadow: 0 0 20px rgba(168,85,247,0.5);
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+<input id="textInput" placeholder="Type text...">
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let particles = [];
+let mouse = { x: null, y: null, radius: 80 };
+
+window.addEventListener("mousemove", e => {
+  mouse.x = e.x;
+  mouse.y = e.y;
+});
+
+class Particle {
+  constructor(x, y) {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.baseX = x;
+    this.baseY = y;
+    this.size = 2;
+    this.density = Math.random() * 30;
+  }
+
+  draw() {
+    ctx.fillStyle = "#a855f7";
+    ctx.shadowColor = "#a855f7";
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  update() {
+    let dx = mouse.x - this.x;
+    let dy = mouse.y - this.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < mouse.radius) {
+      let force = (mouse.radius - distance) / mouse.radius;
+      this.x -= dx * force;
+      this.y -= dy * force;
+    } else {
+      this.x += (this.baseX - this.x) * 0.05;
+      this.y += (this.baseY - this.y) * 0.05;
+    }
+  }
+}
+
+function createText(text) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "white";
+  ctx.font = "bold 100px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  particles = [];
+
+  for (let y = 0; y < data.height; y += 4) {
+    for (let x = 0; x < data.width; x += 4) {
+      let i = (y * data.width + x) * 4;
+      if (data.data[i + 3] > 128) {
+        particles.push(new Particle(x, y));
+      }
+    }
+  }
+}
+
+function animate() {
+  ctx.fillStyle = "rgba(0,0,0,0.2)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach(p => {
+    p.update();
+    p.draw();
+  });
+
+  requestAnimationFrame(animate);
+}
+
+document.getElementById("textInput").addEventListener("input", e => {
+  createText(e.target.value);
+});
+
+createText("HELLO");
+animate();
+</script>
+
+</body>
+</html>
